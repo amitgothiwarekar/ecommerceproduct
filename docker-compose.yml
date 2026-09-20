@@ -1,0 +1,50 @@
+services:
+  mysqldb:
+    image: mysql:8.0
+    container_name: mysqldb
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ecommercedb
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: C:\springbootprojects\ecommerceproduct
+      dockerfile: Dockerfile
+    container_name: backend-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/ecommercedb?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
+    depends_on:
+      mysqldb:
+        condition: service_healthy   # Waits for MySQL healthcheck to pass
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: C:\angularprojects\ecommerce-practicefinal2
+      dockerfile: Dockerfile
+    container_name: frontend-service
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
